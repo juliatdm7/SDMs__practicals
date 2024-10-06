@@ -87,3 +87,35 @@ plot(predictors,1:9)
 #And here we can add our species data onto a plot of climate data for the first variable.
 plot(predictors,1, main = "Triturus pygmaeus vs. Annual Mean Temperature")
 points(clean_occdata$lon,clean_occdata$lat, col='purple',pch=16,cex=0.2)
+
+#4.Creating background data
+##We have to do this because in this case we only have presence data and not presence/absence data
+##One approach that is widely used is to sample background data from a region - this should cover locations where the species is present and is absent.
+
+#here I'm setting the spatial extent to be broadly consistent with that of my study species (you need to make sure it is sampling from the same extent). Remember to find out how a function works you can do ?function
+bg <- spatSample(predictors,5000,"random", na.rm=TRUE, as.points=TRUE,ext=e) #To know what cell number to insert, we need to test it out a little bit and see what works best. Experience helps having some intuition about what will work best.
+
+#Here we'll plot our background points on a map of climwin variable 1 (you could change this to any of the worldclim variables)
+plot(predictors, 1)
+points(bg, cex=0.1)
+
+
+#5.Matching occurrence and climate data
+##Our final step before we can run the model is to match the climate and occurrence data - in the previous workshop this had already been done for us. Here our occurrence data are point data and our climate data are in raster (grid) format, at 10 minute resolution.
+
+occlatlon <- cbind(clean_occdata$lon,clean_occdata$lat)
+presvals <- extract(predictors, occlatlon)
+#presvals is the climate data for where the species is present
+backvals <- values(bg)
+#backvals is the climate data for the background data
+bg_lonlat <- geom(bg)
+lonlats <- rbind(occlatlon, bg_lonlat[,c("x","y")])
+pb <- c(rep(1, nrow(presvals)), rep(0, nrow(backvals)))
+#The first column of the dataset is a vector of 1s for presences and 0s for background data.
+sdmdata <- data.frame(cbind(lonlats,pb, rbind(presvals, backvals)))
+#here we combine the presence and background data into a single data frame
+#In sdmdata the first two columns are climate data and third column contains either a 1 (species present) or 0 (background data). The remaining columns are the corresponding worldclim variables for these location.
+#In my case, all rows up until row number 3067 are "1", out of 4067
+
+#We can also examine how colinear (i.e. correlated) predictor variables are. Highly correlated predictor variables can give rise to statistical issues.
+pairs(sdmdata[,4:7], cex=0.1) #Here we just look at the correlations between the first 4 climate variables. You could extend this to look at all 19. 
