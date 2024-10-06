@@ -119,3 +119,63 @@ sdmdata <- data.frame(cbind(lonlats,pb, rbind(presvals, backvals)))
 
 #We can also examine how colinear (i.e. correlated) predictor variables are. Highly correlated predictor variables can give rise to statistical issues.
 pairs(sdmdata[,4:7], cex=0.1) #Here we just look at the correlations between the first 4 climate variables. You could extend this to look at all 19. 
+
+#6.Fitting a species distribution model
+##We will not focus on variables that are specifically relevant to our species due to time constraints
+##The predicts package in R allows us to fit a whole variety of functions that are useful in running species distribution models. Next we will use it to run the MAXENT approach that has proven very popular.
+
+sdmdata <- subset(sdmdata,is.na(bio_1)==F)
+#here we're just removing a couple of rows where the climate data are NAs.
+
+specdata <- as.data.frame(cbind(rep("Triturus pygmaeus",length(sdmdata[,1])), sdmdata))
+
+names(specdata)[1:4] <- c("species","longitude","latitude","presabs")
+
+specdata <- subset(specdata,presabs==1)
+
+backdata <- as.data.frame(cbind(rep("background",length(sdmdata[,1])), sdmdata))
+
+names(backdata)[1:4] <- c("","longitude","latitude","presabs")
+
+backdata <- subset(backdata,presabs==0)
+
+
+write.table(specdata[,-4],paste(output_dir,"/Trituruspygmaeus_swd.csv",sep=""),col.names=T,row.names=F,sep=",")
+write.table(backdata[,-4],paste(output_dir,"/background.csv",sep=""),col.names=T,row.names=F,sep=",")
+
+model <- MaxEnt(sdmdata[,-c(1:3)],sdmdata[,3],removeDuplicates=TRUE)
+
+plot(model)
+
+#If we increase e, it increases the area that it's trying to predict so it might get a better prediction. 
+#Actually, when we increase the are up to middle France (something like that), the Area Under the Curve of the receiver operating characteristic (ROC) curve is 0.921. 
+#The variables that come out as the most important are Precipitation of Driest Month, Precipitation Seasonality, Temperature Seasonality. This makes a lot of sense given that, as amphibians, newts are more vulnerable to dryness Also quite interesting considering that one of their main threats is precisely the desertification in the Iberian Peninsula
+
+predictedocc <- predict(model, predictors, args=c("outputformat=raw")) 
+
+par(mfrow=c(2,1))
+plot(predictedocc)
+plot(predictedocc)
+points(occlatlon,pch=".",col="red")
+
+#7.Predicting future distributions
+
+bio_fut <- cmip6_world("ACCESS-CM2", ssp = "245", time = "2041-2060", var="bioc", res = 10, path = output_dir)
+fut_predictors <- crop(bio_fut,e)
+plot(predictors,2)
+plot(fut_predictors,2)
+
+names(fut_predictors) <- names(predictors)
+
+fut_predictedocc <- predict(model, fut_predictors, args=c("outputformat=raw")) 
+
+par(mfrow=c(2,1))
+plot(predictedocc,main="current")
+
+plot(fut_predictedocc,main="2050")
+
+
+#Looking at the climate future predictions, answer questions:
+##1. What are the 3 main climate drivers that your species is sensitive to? Precipitation of Driest Month, Precipitation Seasonality and Temperature Seasonality
+##2. Has the future area of climate suitability increased or decreased? It has DRASTICALLY decreased: most Iberian Peninsula except for Lisbon area is not suitable at all for T. pygmaeus by 2050.
+##3. Is there a clear biogeographic signal to where the suitable climate has moved, e.g., up mountain? it's moved towards the Atlantic coast, but not to all coast. Also a bit further North
