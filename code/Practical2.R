@@ -22,7 +22,7 @@ wrld <- world(path=".")
 ##this function gives us an outline of the world's political boundaries. Reminder, if ever you want to know more about an R function, you can write ?function.name, e.g., ?world
 plot(wrld, xlim=c(-15,5), ylim=c(32,47), col="light yellow", border="light gray")
 ##add the points
-points(occdata$lon, occdata$lat, col='blue', pch=20)
+points(occdata$lon, occdata$lat, col='purple', pch=20)
 
 #2. Cleaning up occurrence data
 ##This occurence data may have quite a few errors, so we have to clean it up before we use it.
@@ -37,13 +37,13 @@ clean_occdata <- clean_occdata[intersect(which(clean_occdata$lon>-10),which(clea
 
 plot(wrld, xlim=c(-15,5), ylim=c(32,47), col="light yellow", border="light gray")
 # add the points
-points(clean_occdata$lon, clean_occdata$lat, col='blue', pch=20)
+points(clean_occdata$lon, clean_occdata$lat, col='purple', pch=20)
 dim(clean_occdata)
 View(clean_occdata)
 
 
 #3.Downloading Worldclim data
-output_dir <- "C:/Users/s2696220/OneDrive - University of Edinburgh/Biodiversity Under Pressure/Workshops_Practicals/SDMs__practicals"
+output_dir <- "C:/Users/s2696220/OneDrive - University of Edinburgh/Biodiversity Under Pressure/Workshops_Practicals/SDMs__practicals/data"
 bio_glob <- worldclim_global(var="bio", res=10,path=output_dir, version="2.1")
 
 dim(bio_glob)
